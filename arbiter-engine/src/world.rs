@@ -86,7 +86,7 @@ mod tests {
     #[ignore]
     #[test]
     fn arbiter_world() {
-        let environment = EnvironmentBuilder::new().build();
+        let environment = EnvironmentBuilder::default().build();
         let connection = Connection::from(&environment);
         let provider = Provider::new(connection);
         let mut world = World::new("test_world", provider);

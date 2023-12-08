@@ -41,8 +41,8 @@ pub struct Connection {
     pub(crate) filter_receivers: Arc<Mutex<HashMap<ethers::types::U256, FilterReceiver>>>,
 }
 
-impl From<&Environment> for Connection {
-    fn from(environment: &Environment) -> Self {
+impl<ExtDB: DatabaseRef + Send + 'static> From<&Environment<ExtDB>> for Connection {
+    fn from(environment: &Environment<ExtDB>) -> Self {
         let instruction_sender = &Arc::clone(&environment.socket.instruction_sender);
         let (outcome_sender, outcome_receiver) = crossbeam_channel::unbounded();
         Self {

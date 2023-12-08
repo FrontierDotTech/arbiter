@@ -514,7 +514,7 @@ fn simulation_signer() -> Result<()> {
 
 #[test]
 fn multiple_signer_addresses() {
-    let mut environment = builder::EnvironmentBuilder::new().build();
+    let mut environment: Environment<InMemoryDB> = builder::EnvironmentBuilder::new().build();
     environment.run();
     let client_1 = RevmMiddleware::new(&environment, Some("0")).unwrap();
     let client_2 = RevmMiddleware::new(&environment, Some("1")).unwrap();
@@ -523,7 +523,7 @@ fn multiple_signer_addresses() {
 
 #[test]
 fn signer_collision() {
-    let environment = builder::EnvironmentBuilder::new().build();
+    let environment: Environment<InMemoryDB> = builder::EnvironmentBuilder::new().build();
     RevmMiddleware::new(&environment, Some("0")).unwrap();
     assert!(RevmMiddleware::new(&environment, Some("0")).is_err());
 }

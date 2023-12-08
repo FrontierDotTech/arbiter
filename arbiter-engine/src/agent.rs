@@ -89,7 +89,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent() {
         // Startup
-        let environment = EnvironmentBuilder::new().build();
+        let environment = EnvironmentBuilder::default().build();
         let client = RevmMiddleware::new(&environment, None).unwrap();
         let arb = ArbiterToken::deploy(
             client.clone(),

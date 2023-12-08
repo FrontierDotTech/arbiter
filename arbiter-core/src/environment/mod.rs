@@ -43,8 +43,9 @@ use revm::{
     primitives::{
         AccountInfo, EVMError, ExecutionResult, HashMap, InvalidTransaction, Log, TxEnv, U256,
     },
-    EVM,
+    InMemoryDB, EVM,
 };
+use revm_primitives::db::DatabaseRef;
 // use hashbrown::{hash_map, HashMap as HashMapBrown};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -124,13 +125,13 @@ pub(crate) type ShutDownReceiver = Receiver<()>;
 /// [`EVM`](https://github.com/bluealloy/revm/blob/main/crates/revm/src/evm.rs)
 /// and being able to move time forward for contracts that depend explicitly on
 /// time.
-pub struct Environment {
+pub struct Environment<ExtDB: DatabaseRef + Send + 'static = InMemoryDB> {
     /// The parameters used to define the [`Environment`].
     pub parameters: EnvironmentParameters,
 
     /// The [`EVM`] that is used as an execution environment and database for
     /// calls and transactions.
-    db: Option<CacheDB<EmptyDB>>,
+    db: Option<CacheDB<ExtDB>>,
 
     /// This gives a means of letting the "outside world" connect to the
     /// [`Environment`] so that users (or agents) may send and receive data from
@@ -146,7 +147,7 @@ pub struct Environment {
 /// Allow the end user to be able to access a debug printout for the
 /// [`Environment`]. Note that the [`EVM`] does not implement debug display,
 /// hence the implementation by hand here.
-impl Debug for Environment {
+impl<ExtDB: DatabaseRef + Send + 'static> Debug for Environment<ExtDB> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Environment")
             .field("parameters", &self.parameters)
@@ -156,13 +157,13 @@ impl Debug for Environment {
     }
 }
 
-impl Environment {
+impl<ExtDB: DatabaseRef + Send + 'static> Environment<ExtDB> {
     /// Privately accessible constructor function for creating an
     /// [`Environment`]. This function should be accessed by the
     /// [`Manager`].
     pub(crate) fn new(
         environment_parameters: EnvironmentParameters,
-        db: Option<CacheDB<EmptyDB>>,
+        db: Option<CacheDB<ExtDB>>,
     ) -> Self {
         let (instruction_sender, instruction_receiver) = unbounded();
         let socket = Socket {
@@ -186,11 +187,7 @@ impl Environment {
         // Initialize the EVM used
         let mut evm = EVM::new();
 
-        if self.db.is_some() {
-            evm.database(self.db.take().unwrap());
-        } else {
-            evm.database(CacheDB::new(EmptyDB::new()));
-        };
+        evm.database(self.db.take().unwrap());
 
         // Choose extra large code size and gas limit
         evm.env.cfg.limit_contract_code_size = Some(0x100000);
@@ -476,7 +473,11 @@ impl Environment {
                         // Set the tx_env and prepare to process it
                         evm.env.tx = tx_env;
 
-                        let result = evm.transact()?.result;
+                        let result = evm
+                            .transact()
+                            // TODO implement errors and remove this map
+                            .map_err(|_err| EnvironmentError::ExecutionUnknown)?
+                            .result;
                         outcome_sender
                             .send(Ok(Outcome::CallCompleted(result)))
                             .map_err(|e| EnvironmentError::Communication(e.to_string()))?;
@@ -519,7 +520,8 @@ impl Environment {
                                         continue;
                                     } else {
                                         outcome_sender
-                                            .send(Err(EnvironmentError::Execution(e)))
+                                            // TODO: pass error here
+                                            .send(Err(EnvironmentError::ExecutionUnknown))
                                             .map_err(|e| {
                                                 EnvironmentError::Communication(e.to_string())
                                             })?;

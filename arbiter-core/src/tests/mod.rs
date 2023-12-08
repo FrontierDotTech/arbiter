@@ -10,9 +10,7 @@ use std::{str::FromStr, sync::Arc};
 
 use anyhow::Result;
 use arbiter_bindings::bindings::{
-    arbiter_math::ArbiterMath,
-    arbiter_token::{self, ArbiterToken},
-    liquid_exchange::LiquidExchange,
+    arbiter_math::ArbiterMath, arbiter_token::ArbiterToken, liquid_exchange::LiquidExchange,
 };
 use ethers::{
     prelude::{
@@ -24,6 +22,7 @@ use ethers::{
     utils::parse_ether,
 };
 use futures::StreamExt;
+use revm::InMemoryDB;
 
 use crate::{
     environment::{cheatcodes::*, *},
@@ -58,7 +57,7 @@ pub const ARBITER_TOKEN_Y_DECIMALS: u8 = 18;
 
 pub const LIQUID_EXCHANGE_PRICE: f64 = 420.69;
 
-fn startup_randomly_sampled() -> Result<(Environment, Arc<RevmMiddleware>)> {
+fn startup_randomly_sampled() -> Result<(Environment<InMemoryDB>, Arc<RevmMiddleware>)> {
     let env = builder::EnvironmentBuilder::new()
         .block_settings(builder::BlockSettings::RandomlySampled {
             block_rate: TEST_BLOCK_RATE,
@@ -73,13 +72,13 @@ fn startup_randomly_sampled() -> Result<(Environment, Arc<RevmMiddleware>)> {
     Ok((env, client))
 }
 
-fn startup_user_controlled() -> Result<(Environment, Arc<RevmMiddleware>)> {
+fn startup_user_controlled() -> Result<(Environment<InMemoryDB>, Arc<RevmMiddleware>)> {
     let env = builder::EnvironmentBuilder::new().build();
     let client = RevmMiddleware::new(&env, Some(TEST_SIGNER_SEED_AND_LABEL))?;
     Ok((env, client))
 }
 
-fn startup_constant_gas() -> Result<(Environment, Arc<RevmMiddleware>)> {
+fn startup_constant_gas() -> Result<(Environment<InMemoryDB>, Arc<RevmMiddleware>)> {
     let env = builder::EnvironmentBuilder::new()
         .gas_settings(builder::GasSettings::Constant(TEST_GAS_PRICE))
         .build();

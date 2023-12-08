@@ -5,18 +5,18 @@ pub(crate) const TEST_ENV_LABEL: &str = "test";
 
 #[test]
 fn auto_start_on_build() {
-    let environment = EnvironmentBuilder::new().build();
+    let environment: Environment<InMemoryDB> = EnvironmentBuilder::new().build();
     let _client = RevmMiddleware::new(&environment, Some(TEST_ENV_LABEL)).unwrap();
 }
 
 #[test]
 fn new_with_builder() {
-    let environment = EnvironmentBuilder::new().build();
+    let environment: Environment<InMemoryDB> = EnvironmentBuilder::new().build();
     assert_eq!(environment.parameters.label, None);
 }
 #[test]
 fn new_with_builder_custom_settings() {
-    let environment = EnvironmentBuilder::new()
+    let environment: Environment<InMemoryDB> = EnvironmentBuilder::new()
         .label(TEST_ENV_LABEL)
         .block_settings(BlockSettings::RandomlySampled {
             block_rate: 1.0,
@@ -34,7 +34,7 @@ fn new_user_controlled() {
         block_settings: BlockSettings::UserControlled,
         gas_settings: GasSettings::UserControlled,
     };
-    let environment = Environment::new(params, None);
+    let environment: Environment<InMemoryDB> = Environment::new(params, None);
     assert_eq!(environment.parameters.label, Some(TEST_ENV_LABEL.into()));
 }
 
@@ -50,7 +50,7 @@ fn new_randomly_sampled() {
         block_settings: block_type,
         gas_settings: GasSettings::RandomlySampled { multiplier: 1.0 },
     };
-    let environment = Environment::new(params, None);
+    let environment: Environment<InMemoryDB> = Environment::new(params, None);
     assert_eq!(environment.parameters.label, Some(TEST_ENV_LABEL.into()));
 }
 
@@ -61,7 +61,7 @@ fn run() {
         block_settings: BlockSettings::UserControlled,
         gas_settings: GasSettings::UserControlled,
     };
-    Environment::new(params, None);
+    Environment::<InMemoryDB>::new(params, None);
 }
 
 #[test]

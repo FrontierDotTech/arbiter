@@ -46,7 +46,7 @@ pub struct EnvironmentParameters {
 /// instantiated. It provides methods for setting the label, block settings, and
 /// gas settings of the `Environment`.
 #[derive(Clone, Debug)]
-pub struct EnvironmentBuilder {
+pub struct EnvironmentBuilder<ExtDB: DatabaseRef + Send = InMemoryDB> {
     /// An optional label for the `Environment`.
     /// It is also used for organizing, tracking progress, and post-processing
     /// results.
@@ -75,13 +75,19 @@ pub struct EnvironmentBuilder {
 
     /// The database to be loaded into the `Environment`.
     /// This can come from a [`fork::Fork`] or otherwise.
-    pub db: Option<CacheDB<EmptyDB>>,
+    pub db: Option<CacheDB<ExtDB>>,
+}
+
+impl Default for EnvironmentBuilder<InMemoryDB> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// The `EnvironmentBuilder` is a builder pattern for creating an
 /// [`Environment`]. It allows for the configuration of the [`Environment`]
 /// before it is created.
-impl EnvironmentBuilder {
+impl<ExtDB: DatabaseRef + Send + 'static> EnvironmentBuilder<ExtDB> {
     /// Creates a new `EnvironmentBuilder` with default settings.
     /// By default, the `block_settings` and `gas_settings` are set to
     /// `UserControlled`.
@@ -132,7 +138,7 @@ impl EnvironmentBuilder {
     /// Sets the `db` for the `EnvironmentBuilder`.
     /// This is an optional [`fork::Fork`] that can be loaded into the
     /// [`Environment`].
-    pub fn db(mut self, db: impl Into<CacheDB<EmptyDB>>) -> Self {
+    pub fn db(mut self, db: impl Into<CacheDB<ExtDB>>) -> Self {
         debug!("Environment initialized with an external DB");
         self.db = Some(db.into());
         self
@@ -140,7 +146,7 @@ impl EnvironmentBuilder {
 
     /// Builds the `Environment` from the `EnvironmentBuilder`.
     /// This consumes the `EnvironmentBuilder` and returns an [`Environment`].
-    pub fn build(self) -> Environment {
+    pub fn build(self) -> Environment<ExtDB> {
         let parameters = EnvironmentParameters {
             label: self.label,
             block_settings: self.block_settings,

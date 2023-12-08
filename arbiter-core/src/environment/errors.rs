@@ -24,6 +24,10 @@ pub enum EnvironmentError {
     #[error("execution error! the source error is: {0:?}")]
     Execution(#[from] EVMError<Infallible>),
 
+    /// TODO: implement normal errors, perhaps with RethError
+    #[error("execution error! Sorry but error mesage is lost")]
+    ExecutionUnknown,
+
     /// [`EnvironmentError::Transaction`] is thrown when a transaction fails
     /// to be processed by the [`EVM`]. This could be due to a insufficient
     /// funds to pay for gas, an invalid nonce, or other reasons. This error

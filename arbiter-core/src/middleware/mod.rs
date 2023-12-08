@@ -41,6 +41,7 @@ use ethers::{
 use futures_timer::Delay;
 use rand::{rngs::StdRng, SeedableRng};
 use revm::primitives::{CreateScheme, Output, TransactTo, TxEnv, U256};
+use revm_primitives::db::DatabaseRef;
 use serde::{de::DeserializeOwned, Serialize};
 // use revm::primitives::{ExecutionResult, Output};
 // use super::cast::revm_logs_to_ethers_logs;
@@ -143,8 +144,8 @@ impl RevmMiddleware {
     /// ```
     /// Use a seed if you want to have a constant address across simulations as
     /// well as a label for a client. This can be useful for debugging.
-    pub fn new(
-        environment: &Environment,
+    pub fn new<ExtDB: DatabaseRef + Send + 'static>(
+        environment: &Environment<ExtDB>,
         seed_and_label: Option<&str>,
     ) -> Result<Arc<Self>, RevmMiddlewareError> {
         let connection = Connection::from(environment);
@@ -186,8 +187,8 @@ impl RevmMiddleware {
 
     // TODO: This needs to have the label retrieved from the fork config.
     /// Creates a new instance of `RevmMiddleware` from a forked EOA.
-    pub fn new_from_forked_eoa(
-        environment: &Environment,
+    pub fn new_from_forked_eoa<ExtDB: DatabaseRef + Send + 'static>(
+        environment: &Environment<ExtDB>,
         forked_eoa: Address,
     ) -> Result<Arc<Self>, RevmMiddlewareError> {
         let instruction_sender = &Arc::clone(&environment.socket.instruction_sender);
